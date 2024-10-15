@@ -1,41 +1,17 @@
-import { ScrollView, Text, View, Image, StyleSheet, FlatList, TouchableOpacity } from "react-native";
+import { ScrollView, Text, View, Image, StyleSheet, FlatList, TouchableOpacity, ImageBackground } from "react-native";
+import { useNavigation } from '@react-navigation/native';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { SearchBar } from "@/components/SearchBar";
 import { ThemedSafeAreaView } from "@/components/ThemedSafeAreaView";
-
-const movies = [
-  { title: "Shawshank Redemption", image: "shawshank.png" },
-  { title: "The Godfather", image: "thegodfather.png" },
-  { title: "The Dark Knight", image: "thedarkknight.png" },
-  { title: "The Godfather Part II", image: "thegodfather2.png" },
-  { title: "12 Angry Men", image: "angrymen12.png" },
-  { title: "The Lord of the Rings", image: "lordofrings.png" },
-  { title: "Schindler's List", image: "schindlerlist.png" },
-  { title: "Pulp Fiction", image: "pulpfiction.png" },
-  { title: "The Lord of the Rings: The Two Towers", image: "lordofrings2.png" },
-  { title: "The Good, The Bad and The Ugly", image: "thegoodthebadtheugly.png" },
-  { title: "Forrest Gump", image: "forrestgump.png" },
-  { title: "Fight Club", image: "fightclub.png" }
-];
-
-const imageMap = {
-  shawshank: require('@/assets/images/movies/shawshank.png'),
-  thegodfather: require('@/assets/images/movies/thegodfather.png'),
-  thedarkknight: require('@/assets/images/movies/thedarkknight.png'),
-  thegodfather2: require('@/assets/images/movies/thegodfather2.png'),
-  angrymen12: require('@/assets/images/movies/12angrymen.png'),
-  lordofrings: require('@/assets/images/movies/lordofrings.png'),
-  schindlerlist: require('@/assets/images/movies/schindlerlist.png'),
-  pulpfiction: require('@/assets/images/movies/pulpfiction.png'),
-  lordofrings2: require('@/assets/images/movies/lordofrings2.png'),
-  thegoodthebadtheugly: require('@/assets/images/movies/thegoodthebadtheugly.png'),
-  forrestgump: require('@/assets/images/movies/forrestgump.png'),
-  fightclub: require('@/assets/images/movies/fightclub.png')
-};
+import { Link } from "expo-router";
+import { movies } from "@/app/moviedata";
 
 export default function Index() {
+
+  const navigation = useNavigation();
+
   return (
     <ThemedSafeAreaView style={styles.container}>
       <Image source={require('@/assets/images/background.png')} style={styles.headerBackground} />
@@ -52,10 +28,16 @@ export default function Index() {
                   numColumns={3}
                   renderItem={({ item }) => (
                     <TouchableOpacity style={styles.movieContainer}>
-                      <Image
-                        source={imageMap[item.image.split('.')[0] as keyof typeof imageMap]}
-                        style={styles.movieImage}
-                      />
+                      <ImageBackground
+                        source={item.image}
+                        style={styles.movieImage}>
+                          <Link 
+                            href= {{
+                              pathname: '/details',
+                              params: { movie: JSON.stringify(item) }
+                            }}
+                            style={styles.linkContainer} />
+                        </ImageBackground>
                     </TouchableOpacity>
                   )}
                   keyExtractor={(item) => item.title}
@@ -127,5 +109,8 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 8,
     resizeMode: 'cover',
+  },
+  linkContainer: {
+    flex: 1,
   },
 });
