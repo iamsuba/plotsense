@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, Text, View, Image, StyleSheet, FlatList, TouchableOpacity, ImageBackground, TextInput } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { liteClient as algoliasearch } from 'algoliasearch/lite';
+import { InstantSearch } from 'react-instantsearch-core';
 
 import { collection, getDocs, query, orderBy, limit, startAfter, where } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
@@ -11,6 +13,11 @@ import { ThemedView } from '@/components/ThemedView';
 import { SearchBar } from "@/components/SearchBar";
 import { ThemedSafeAreaView } from "@/components/ThemedSafeAreaView";
 import { Link } from "expo-router";
+import { SearchBox } from '@/components/SearchBox';
+import { InfiniteHits } from './infiniteHits';
+
+// Initialize Algolia
+const searchClient = algoliasearch('NRPR9KBO1S', 'db61a67d0131e488014da37a7c836c44');
 
 export default function Index() {
 
@@ -19,8 +26,8 @@ export default function Index() {
   const [lastVisibleMovie, setLastVisibleMovie] = useState(null); // Track the last visible document
   const [loading, setLoading] = useState(false); // For showing a loading spinner
   const [isEndReached, setIsEndReached] = useState(false); // To avoid multiple triggers for fetchMore
-  const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
 
   // Set the limit for the number of movies to fetch per page
@@ -64,22 +71,6 @@ export default function Index() {
     }
   };
 
-  // Function to fetch movies based on the search query
-  const searchMovies = async (queryText) => {
-    console.log("Searching for: ", queryText);
-
-    try {
-      const moviesRef = collection(db, 'movies');
-      // Query the movies collection where the title contains the search query
-      const q = query(moviesRef, where('title', '>=', queryText), where('title', '<=', queryText + '\uf8ff'));
-      const querySnapshot = await getDocs(q);
-      const matchingMovies = querySnapshot.docs.map(doc => doc.data());
-      setSearchResults(matchingMovies);
-    } catch (error) {
-      console.error("Error searching movies: ", error);
-    }
-  };
-
   // Call the fetchMovies function to retrieve movies from Firestore when the component mounts
   useEffect(() => {
     fetchMovies();
@@ -92,6 +83,12 @@ export default function Index() {
     }
   };
 
+  function Hit({ hit }) {
+    return (
+      <Text>{hit.name}</Text>
+    );
+  }
+
   return (
     <ThemedSafeAreaView style={styles.container}>
       <Image source={require('@/assets/images/background.png')} style={styles.headerBackground} />
@@ -100,70 +97,40 @@ export default function Index() {
             <View style={styles.header}>
               <Image source={require('@/assets/images/logo.png')} style={styles.logo} />
               <Text style={styles.subtitle}>Your AI companion to elevate your watching experience</Text>
-              {/* <SearchBar style={styles.searchBar} placeholder="Search for movies" /> */}
-              <View style={styles.searchContainer}>
-                <Ionicons name="search" size={14} style={styles.searchIcon} />
-                <TextInput
-                    style={styles.searchInput}
-                    placeholder="Search for movies"
-                    value={searchQuery}
-                    placeholderTextColor={'grey'}
-                    onChangeText={(text) => {
-                      setSearchQuery(text);
-                      searchMovies(text);
-                    }}
-                />
-              </View>
-              {searchQuery.length > 0 && (
-                <View style={styles.searchResultsContainer}>
-                  <FlatList
-                    data={searchResults}
-                    renderItem={({ item }) => (
-                      <TouchableOpacity
-                        style={styles.searchResultItem}
-                        onPress={() => {
-                          setSearchQuery(''); // Clear the search query
-                          setSearchResults([]); // Clear the search results
-                          navigation.navigate('Details', { movie: JSON.stringify(item) }); // Navigate to the movie details
-                        }}
-                      >
-                        <Text style={styles.searchResultText}>{item.title}</Text>
-                      </TouchableOpacity>
-                    )}
-                    keyExtractor={(item) => item.movie_id}
-                  />
-                </View>
-              )}
+              <InstantSearch searchClient={searchClient} indexName="movies_index">
+                <SearchBox setQuery={setSearchQuery} setSearchResults={setSearchResults} />
+                <InfiniteHits setSearchResults={setSearchResults} query={searchQuery} />
+              </InstantSearch>
             </View>
                 <View style={styles.listContainer}>
-                <FlatList
-                  data={movies}
-                  numColumns={3}
-                  renderItem={({ item }) => (
-                  <TouchableOpacity style={styles.movieContainer}>
-                    <ImageBackground
-                    source={{ uri: item.poster_url }}
-                    style={styles.movieImage}>
-                      <Link 
-                      href= {{
-                      pathname: '/details',
-                      params: { movie: JSON.stringify(item) }
-                      }}
-                      style={styles.linkContainer} />
-                    </ImageBackground>
-                  </TouchableOpacity>
-                  )}
-                  keyExtractor={(item) => item.movie_id}
-                  onEndReached={handleLoadMore} // Load more when end is reached
-                  onEndReachedThreshold={0.5}  // When to trigger load more (0.5 = halfway)
-                  refreshing={loading} // Show loading spinner when refreshing
-                  onRefresh={() => {
-                  setMovies([]); // Clear the current movies
-                  setLastVisibleMovie(null); // Reset the last visible movie
-                  setIsEndReached(false); // Reset the end reached flag
-                  fetchMovies(); // Fetch movies again
-                  }} // Reload when pull down
-                />
+                  <FlatList
+                    data={searchResults.length > 0 ? searchResults : movies}
+                    numColumns={3}
+                    renderItem={({ item }) => (
+                    <TouchableOpacity style={styles.movieContainer}>
+                        <ImageBackground
+                        source={{ uri: item.poster_url }}
+                        style={styles.movieImage}>
+                          <Link 
+                          href= {{
+                          pathname: '/details',
+                          params: { movie: JSON.stringify(item) }
+                          }}
+                          style={styles.linkContainer} />
+                        </ImageBackground>
+                    </TouchableOpacity>
+                    )}
+                    keyExtractor={(item) => searchResults.length > 0 ? item.objectID : item.movie_id}
+                    onEndReached={handleLoadMore} // Load more when end is reached
+                    onEndReachedThreshold={0.5}  // When to trigger load more (0.5 = halfway)
+                    refreshing={loading} // Show loading spinner when refreshing
+                    onRefresh={() => {
+                    setMovies([]); // Clear the current movies
+                    setLastVisibleMovie(null); // Reset the last visible movie
+                    setIsEndReached(false); // Reset the end reached flag
+                    fetchMovies(); // Fetch movies again
+                    }} // Reload when pull down
+                  />
                 </View>
       </View>
     </ThemedSafeAreaView>
