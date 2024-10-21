@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Modal, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Modal, ImageBackground, Image } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function Details() {
     const { movie } = useLocalSearchParams();
+    console.log(movie);
     const movieData = movie ? JSON.parse(movie) : {};
     const navigation = useNavigation();
 
@@ -39,7 +40,7 @@ export default function Details() {
 
             <ScrollView>
                 <View style={styles.imageContainer}>
-                    <ImageBackground source={movieData.image} style={styles.image} resizeMode='cover'>
+                    <ImageBackground source={{ uri: movieData.backdrop_url }} style={styles.image} resizeMode='cover'>
                         <TouchableOpacity onPress={() => navigation.goBack()}>
                             <Ionicons name="arrow-back-circle" color="white" style={styles.actionIcons} />
                         </TouchableOpacity>
@@ -48,8 +49,9 @@ export default function Details() {
 
                 <View style={styles.detailsContainer}>
                     
+                    <Image source={{ uri: movieData.poster_url }} style={styles.posterImage} />
                     <Text style={styles.title}>{movieData.title}</Text>
-                    <Text style={styles.description}>The Dark Knight follows Batman as he faces his greatest challenge yet: the Joker, a chaotic criminal mastermind. As the Joker wreaks havoc on Gotham City, Batman must confront his own limits and make tough choices to protect the city. The film delves into themes of heroism, morality, and the fine line between order and chaos.</Text>
+                    <Text style={styles.description}>{movieData.overview}</Text>
 
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Plot Layers</Text>
@@ -133,6 +135,16 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 0,
         left: 0,
+    },
+    posterImage: {
+        width: 120,
+        height: 180,
+        resizeMode: 'cover',
+        borderRadius: 8,
+        marginTop: -160,
+        marginBottom: 24,
+        borderWidth: 4,
+        borderColor: '#11303E',
     },
     detailsContainer: {
         padding: 24,

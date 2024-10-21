@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { liteClient as algoliasearch } from 'algoliasearch/lite';
 import { InstantSearch } from 'react-instantsearch-core';
 
-import { collection, getDocs, query, orderBy, limit, startAfter, where } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, limit, startAfter, where, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -83,11 +83,33 @@ export default function Index() {
     }
   };
 
-  function Hit({ hit }) {
-    return (
-      <Text>{hit.name}</Text>
-    );
+  async function fetchMovieDetailsFromFirestore(path) {
+    try {
+      console.log(path);
+      const movieDocRef = doc(db, path);  // Create reference using the path
+      const movieDoc = await getDoc(movieDocRef);
+  
+      if (movieDoc.exists()) {
+        return movieDoc.data();  // Return the movie data
+      } else {
+        console.log('No such document!');
+      }
+    } catch (error) {
+      console.error('Error fetching document:', error);
+    }
   }
+
+  const handlePressMovie = async (item) => {
+    let movieDetails = item;
+    if (item.path) {
+      // Fetch movie details from Firestore if `path` exists (i.e., it's a search result)
+      movieDetails = await fetchMovieDetailsFromFirestore(item.path);
+    }
+    // Navigate to the details screen
+    navigation.navigate('details', {
+      movie: JSON.stringify(movieDetails),
+    });
+  };
 
   return (
     <ThemedSafeAreaView style={styles.container}>
@@ -107,16 +129,17 @@ export default function Index() {
                     data={searchResults.length > 0 ? searchResults : movies}
                     numColumns={3}
                     renderItem={({ item }) => (
-                    <TouchableOpacity style={styles.movieContainer}>
+                      <TouchableOpacity style={styles.movieContainer} onPress={async() => await handlePressMovie(item)}>
                         <ImageBackground
-                        source={{ uri: item.poster_url }}
-                        style={styles.movieImage}>
-                          <Link 
-                          href= {{
-                          pathname: '/details',
-                          params: { movie: JSON.stringify(item) }
-                          }}
-                          style={styles.linkContainer} />
+                          source={{ uri: item.poster_url }}
+                          style={styles.movieImage}>
+                          {/* <Link 
+                            href={{
+                              pathname: '/details',
+                              params: { movie: item.path ? fetchMovieDetailsFromFirestore(item.path) : JSON.stringify(item) }
+                            }}
+                            style={styles.linkContainer} 
+                          /> */}
                         </ImageBackground>
                     </TouchableOpacity>
                     )}
