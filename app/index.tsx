@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, Text, View, Image, StyleSheet, FlatList, TouchableOpacity, ImageBackground, TextInput } from "react-native";
-import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { liteClient as algoliasearch } from 'algoliasearch/lite';
 import { InstantSearch } from 'react-instantsearch-core';
@@ -12,7 +11,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { SearchBar } from "@/components/SearchBar";
 import { ThemedSafeAreaView } from "@/components/ThemedSafeAreaView";
-import { Link } from "expo-router";
+import { useNavigation } from "expo-router";
 import { SearchBox } from '@/components/SearchBox';
 import { InfiniteHits } from './infiniteHits';
 
@@ -20,7 +19,6 @@ import { InfiniteHits } from './infiniteHits';
 const searchClient = algoliasearch('NRPR9KBO1S', 'db61a67d0131e488014da37a7c836c44');
 
 export default function Index() {
-
   const navigation = useNavigation();
   const [movies, setMovies] = useState([]);
   const [lastVisibleMovie, setLastVisibleMovie] = useState(null); // Track the last visible document
@@ -105,7 +103,6 @@ export default function Index() {
       // Fetch movie details from Firestore if `path` exists (i.e., it's a search result)
       movieDetails = await fetchMovieDetailsFromFirestore(item.path);
     }
-    // Navigate to the details screen
     navigation.navigate('details', {
       movie: JSON.stringify(movieDetails),
     });
