@@ -5,7 +5,6 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function Details() {
     const { movie } = useLocalSearchParams();
-    console.log(movie);
     const movieData = movie ? JSON.parse(movie) : {};
     const navigation = useNavigation();
 
@@ -56,11 +55,23 @@ export default function Details() {
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Plot Layers</Text>
                         <ScrollView horizontal style={styles.sectionCardsContainer}>
-                            {movieData.plot_layers && movieData.plot_layers.map((layer, index) => (
+                            {movieData.insights.plot_layers && movieData.insights.plot_layers.map((layer, index) => (
                                 <TouchableOpacity key={index} onPress={() => openModal(index, 'plot_layers')} style={styles.card}>
                                     <Text style={styles.cardTitle}>{layer.title}</Text>
                                     <Text style={styles.theme}>{layer.theme}</Text>
-                                    <Text style={styles.cardDescription}>{layer.description}</Text>
+                                    <Text style={styles.cardDescription}>{layer.explanation}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </View>
+
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Recap</Text>
+                        <ScrollView horizontal style={styles.sectionCardsContainer}>
+                            {movieData.insights.recap && movieData.insights.recap.map((recap, index) => (
+                                <TouchableOpacity key={index} onPress={() => openModal(index, 'recap')} style={styles.card}>
+                                    <Text style={styles.cardTitle}>"{recap.scene_description}"</Text>
+                                    <Text style={styles.cardDescription}>- {recap.importance}</Text>
                                 </TouchableOpacity>
                             ))}
                         </ScrollView>
@@ -69,10 +80,10 @@ export default function Details() {
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Quotes</Text>
                         <ScrollView horizontal style={styles.sectionCardsContainer}>
-                            {movieData.quotes && movieData.quotes.map((quote, index) => (
+                            {movieData.insights.quotes && movieData.insights.quotes.map((quote, index) => (
                                 <TouchableOpacity key={index} onPress={() => openModal(index, 'quotes')} style={styles.card}>
                                     <Text style={styles.cardTitle}>"{quote.quote}"</Text>
-                                    <Text style={styles.cardDescription}>- {quote.explanation}</Text>
+                                    <Text style={styles.cardDescription}>- {quote.meaning}</Text>
                                 </TouchableOpacity>
                             ))}
                         </ScrollView>
@@ -89,11 +100,22 @@ export default function Details() {
 
                             {selectedCategory === 'plot_layers' && (
                                 <ScrollView ref={scrollRef} horizontal style={styles.modalCardContainer}>
-                                    {movieData.plot_layers && movieData.plot_layers.map((layer, index) => (
-                                        <View key={index} style={[styles.modalCard, index == 0 && styles.modalCardFirstChild, index == movieData.plot_layers.length - 1 && styles.modalCardLastChild]}>
+                                    {movieData.insights.plot_layers && movieData.insights.plot_layers.map((layer, index) => (
+                                        <View key={index} style={[styles.modalCard, index == 0 && styles.modalCardFirstChild, index == movieData.insights.plot_layers.length - 1 && styles.modalCardLastChild]}>
                                             <Text style={styles.modalCardTitle}>{layer.title}</Text>
                                             <Text style={styles.modalCardTheme}>{layer.theme}</Text>
-                                            <Text style={styles.modalCardDescription}>{layer.description}</Text>
+                                            <Text style={styles.modalCardDescription}>{layer.explanation}</Text>
+                                        </View>
+                                    ))}
+                                </ScrollView>
+                            )}
+
+                            {selectedCategory === 'recap' && (
+                                <ScrollView ref={scrollRef} horizontal style={styles.modalCardContainer}>
+                                    {movieData.insights.recap && movieData.insights.recap.map((layer, index) => (
+                                        <View key={index} style={[styles.modalCard, index == 0 && styles.modalCardFirstChild, index == movieData.insights.recap.length - 1 && styles.modalCardLastChild]}>
+                                            <Text style={styles.modalCardTitle}>{layer.scene_description}</Text>
+                                            <Text style={styles.modalCardTheme}>{layer.importance}</Text>
                                         </View>
                                     ))}
                                 </ScrollView>
@@ -101,10 +123,10 @@ export default function Details() {
 
                             {selectedCategory === 'quotes' && (
                                 <ScrollView ref={scrollRef} horizontal style={styles.modalCardContainer}>
-                                    {movieData.quotes && movieData.quotes.map((quote, index) => (
-                                        <View key={index} style={[styles.modalCard, index == 0 && styles.modalCardFirstChild, index == movieData.quotes.length - 1 && styles.modalCardLastChild]}>
+                                    {movieData.insights.quotes && movieData.insights.quotes.map((quote, index) => (
+                                        <View key={index} style={[styles.modalCard, index == 0 && styles.modalCardFirstChild, index == movieData.insights.quotes.length - 1 && styles.modalCardLastChild]}>
                                             <Text style={styles.modalCardTitle}>"{quote.quote}"</Text>
-                                            <Text style={styles.modalCardDescription}>- {quote.explanation}</Text>
+                                            <Text style={styles.modalCardDescription}>- {quote.meaning}</Text>
                                         </View>
                                     ))}
                                 </ScrollView>
@@ -173,6 +195,7 @@ const styles = StyleSheet.create({
     },
     card: {
         width: 150,
+        maxHeight: 200,
         backgroundColor: '#11303E',
         padding: 12,
         borderRadius: 8,
@@ -209,7 +232,6 @@ const styles = StyleSheet.create({
     },
     modalCard: {
         width: 300,
-        height: 400,
         backgroundColor: 'rgba(0, 0, 0, 0.7)', // Added opacity of 0.7
         borderColor: '#11303E',
         borderWidth: 1,
